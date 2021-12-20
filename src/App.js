@@ -8,8 +8,6 @@ import Admin from './pages/admin/admin'
  * 应用的根组件
  */
 export default class App extends Component {
- 
-    
     render() { 
         return (
             <BrowserRouter>
