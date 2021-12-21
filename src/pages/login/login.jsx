@@ -8,7 +8,10 @@ import {
 } from 'antd'
 import './login.less'
 import logo from '../../assets/images/logo.png'
-
+import {reqLogin} from '../../api'
+import memoryUtils from '../../utils/memoryUtils'
+import storageUtils from '../../utils/storageUtils'
+import { Redirect } from 'react-router-dom';
 const Item = Form.Item;     //  不能写在import之前
 
 /**
@@ -18,13 +21,37 @@ class Login extends Component {
     
     handleSubmit = (event) =>{
         //  阻止事件的默认行为
-        event.preventDefault()
+        event.preventDefault();
+        
+        //  对所有表单字段进行检验
+        this.props.form.validateFields(async(err, values) => {
+            if(!err){
+                //  请求登陆
+                const {username, password} = values;
+                const result = await reqLogin(username, password) 
+                if(result.status === 0){
+                  message.success('登陆成功!');
+                  const user = result.data;
+                  memoryUtils.user = user;      //  保存在内存中
+                  storageUtils.saveUser(user);  //  保存到local中
+                  this.props.history.replace('/');
+                } else {
+                  message.error(result.msg);
+                }
+            } else {
+                console.log('检验失败!')
+            }
+        })
+    }
+
+    /**
         //  得到form对象
         const form = this.props.form;
         //  获取表单项的输入数据
         const values = form.getFieldsValue();
         console.log('handleSubmit()', values);
-    }
+     */
+
     /**
      * 对密码进行自定义验证
      * 用户名/密码的合法性要求
@@ -34,7 +61,7 @@ class Login extends Component {
      * 4)、必须是英文、数字或下划线组成
      */
     validatePwd = (rule, value, callback) => {
-        console.log('validatePwd()', rule, value)
+        // console.log('validatePwd()', rule, value)
         if(!value) {
           callback('密码必须输入')
         } else if (value.length<4) {
@@ -49,6 +76,11 @@ class Login extends Component {
     }
 
     render () {
+        //  如果用户已经登陆,自动跳转到管理界面
+        const user = memoryUtils.user;
+        if(user && user._id){
+          return <Redirect to='/login'/>
+        }
         //  得到具强大功能的form对象
         const form = this.props.form;
         const {getFieldDecorator} = form;
